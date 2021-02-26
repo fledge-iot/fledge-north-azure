@@ -1,1 +1,1 @@
-azure-iot-device==2.3.0
+azure-iot-device>=2.3.0
