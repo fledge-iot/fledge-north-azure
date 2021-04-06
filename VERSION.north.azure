@@ -1,2 +1,2 @@
-fledge_north_kafka_python_version=0.0.1
+fledge_north_azure_version=0.0.2
 fledge_version>=1.8
