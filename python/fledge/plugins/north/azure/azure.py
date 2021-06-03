@@ -73,7 +73,7 @@ _DEFAULT_CONFIG = {
 def plugin_info():
     return {
         'name': 'azure',
-        'version': '0.0.2',
+        'version': '1.9.1',
         'type': 'north',
         'interface': '1.0',
         'config': _DEFAULT_CONFIG
