@@ -24,11 +24,6 @@ The configuration of the *Azure* plugin requires a few simple configuration para
 
   - **Data Source**: Which Fledge data to send to Azure; Readings or Fledge Statistics.
 
-  - **Apply Filter**: This allows a simple jq format filter rule to be applied to the connection. This should not be confused with Fledge filters and exists for backward compatibility reason only.
-
-  - **Filter Rule**: A jq filter rule to apply. Since the introduction of Fledge filters in the north task this has become deprecated and should not be used.
-
-
 JSON Payload
 ------------
 
