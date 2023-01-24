@@ -13,3 +13,4 @@
 
 # Test
 .pytest_cache
+test_result.xml
