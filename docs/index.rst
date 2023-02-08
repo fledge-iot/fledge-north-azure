@@ -1,10 +1,10 @@
 .. Images
-.. |azure| image:: images/azure.jpg
+.. |azure| image:: images/azure_iot.jpg
 
 Azure IoT Hub
 =============
 
-The *fledge-north-azure* plugin sends data from Fledge to the Microsoft Azure IoT Core service.
+The *fledge-north-azure-iot* plugin sends data from Fledge to the Microsoft Azure IoT Core service.
 
 The configuration of the *Azure* plugin requires a few simple configuration parameters to be set.
 
