@@ -8,6 +8,11 @@ import logging
 
 from fledge.common import logger
 
+# Using the Python Azure Device SDK for IoT Hub:
+# https://github.com/Azure/azure-iot-sdk-python
+from azure.iot.device.aio import IoTHubDeviceClient
+from azure.iot.device import Message, MethodResponse
+
 __author__ = "Sebastian Kropatschek"
 __copyright__ = "Copyright (c) 2020 Kapsch & Austrian Center for Digital Production (ACDP)"
 __license__ = "Apache 2.0"
@@ -19,7 +24,7 @@ _DEFAULT_CONFIG = {
     'plugin': {
          'description': 'Azure North Plugin',
          'type': 'string',
-         'default': 'azure',
+         'default': 'azure_iot',
          'readonly': 'true'
     },
     'primaryConnectionString': {
@@ -50,7 +55,7 @@ _DEFAULT_CONFIG = {
 
 def plugin_info():
     return {
-        'name': 'Azure',
+        'name': 'Azure IoT',
         'version': '2.1.0',
         'type': 'north',
         'interface': '1.0',

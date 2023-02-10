@@ -1,9 +1,9 @@
 # A set of variables that define how we package this repository
 #
-plugin_name=azure
+plugin_name=azure_iot
 plugin_type=north
 plugin_install_dirname=${plugin_name}
-plugin_package_name=fledge-${plugin_type}-azure
+plugin_package_name=fledge-${plugin_type}-azure-iot
 
 # Now build up the runtime requirements list. This has 3 components
 #   1. Generic packages we depend on in all architectures and package managers
