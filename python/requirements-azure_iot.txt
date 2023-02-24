@@ -1,1 +1,3 @@
 azure-iot-device==2.12.0;python_version>="3.6"
+# only required for to resolve conflicts; as 3.0.1 charset-normalizer dependency installed with azure-iot-device though fledge core aiohttp requires charset-normalizer-2.1.1
+charset-normalizer==2.1.1
