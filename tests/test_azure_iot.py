@@ -26,7 +26,7 @@ def test_plugin_contract():
 def test_plugin_info():
     assert azure_iot.plugin_info() == {
         'name': 'Azure IoT',
-        'version': '2.1.0',
+        'version': '2.1.1',
         'type': 'north',
         'interface': '1.0',
         'config': config
