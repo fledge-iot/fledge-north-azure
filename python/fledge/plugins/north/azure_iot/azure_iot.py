@@ -142,14 +142,13 @@ class AzureNorthPlugin(object):
             await device_client.connect()
             
             await self._send(device_client, payload_block)
-            
-            # finally, disconnect
-            await device_client.disconnect()
-
         except Exception as ex:
             _LOGGER.exception(f'Exception sending payloads: {ex}')
         else:
             num_count += len(payload_block)
+        finally:
+            # graceful exit
+            await device_client.shutdown()
         return num_count
 
     async def _send(self, client, payload):
