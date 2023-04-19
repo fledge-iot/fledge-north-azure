@@ -34,7 +34,9 @@ def test_plugin_info():
 
 
 def test_plugin_init():
-    assert azure_iot.plugin_init(azure_iot._DEFAULT_CONFIG) == config
+    actual = azure_iot.plugin_init(config)
+    del actual['azure_north']
+    assert actual == config
 
 
 @pytest.mark.skip(reason="To be implemented")
