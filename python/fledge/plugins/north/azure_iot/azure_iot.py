@@ -67,9 +67,7 @@ def plugin_info():
 
 def plugin_init(data):
     config_data = deepcopy(data)
-    conn_str = config_data["primaryConnectionString"]["value"]
-    websocket = True if config_data["websockets"]["value"].lower() in ("true", "false") else False
-    config_data['azure_north'] = AzureNorthPlugin(conn_str=conn_str, websocket=websocket)
+    config_data['azure_north'] = AzureNorthPlugin(config_data)
     return config_data
 
 
@@ -96,10 +94,10 @@ def plugin_reconfigure():
 class AzureNorthPlugin(object):
     """North Azure Plugin"""
 
-    def __init__(self, conn_str, websocket):
+    def __init__(self, config):
         self.event_loop = asyncio.get_event_loop()
-        self.primary_connection_string = conn_str
-        self.mqtt_over_websocket = websocket
+        self.primary_connection_string = config["primaryConnectionString"]["value"]
+        self.mqtt_over_websocket = True if config["websockets"]["value"].lower() in ("true", "false") else False
 
     async def send_payloads(self, payloads):
         is_data_sent = False

@@ -4,6 +4,7 @@
 # See: http://fledge-iot.readthedocs.io/
 # FLEDGE_END
 
+from unittest.mock import patch
 import pytest
 from python.fledge.plugins.north.azure_iot import azure_iot
 
@@ -25,7 +26,7 @@ def test_plugin_contract():
 
 def test_plugin_info():
     assert azure_iot.plugin_info() == {
-        'name': 'Azure IoT',
+        'name': 'Azure IoT Hub device client',
         'version': '2.1.0',
         'type': 'north',
         'interface': '1.0',
@@ -34,9 +35,10 @@ def test_plugin_info():
 
 
 def test_plugin_init():
-    actual = azure_iot.plugin_init(config)
-    del actual['azure_north']
-    assert actual == config
+    with patch.object(azure_iot, 'AzureNorthPlugin'):
+        actual = azure_iot.plugin_init(config)
+        del actual['azure_north']
+        assert actual == config
 
 
 @pytest.mark.skip(reason="To be implemented")
