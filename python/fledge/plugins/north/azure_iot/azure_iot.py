@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Microsoft Azure IoT Core North plugin"""
+"""Microsoft Azure IoT Hub device client North plugin"""
 import asyncio
 import json
 import sys
@@ -23,7 +23,7 @@ _LOGGER = logger.setup(__name__, level=logging.INFO)
 
 _DEFAULT_CONFIG = {
     "plugin": {
-        "description": "Azure North Plugin",
+        "description": "Azure IoT Hub device client North Plugin",
         "type": "string",
         "default": "azure_iot",
         "readonly": "true"
@@ -57,7 +57,7 @@ _DEFAULT_CONFIG = {
 
 def plugin_info():
     return {
-        'name': 'Azure IoT',
+        'name': 'Azure IoT Hub device client',
         'version': '2.1.0',
         'type': 'north',
         'interface': '1.0',
@@ -67,7 +67,9 @@ def plugin_info():
 
 def plugin_init(data):
     config_data = deepcopy(data)
-    config_data['azure_north'] = AzureNorthPlugin(config_data)
+    conn_str = config_data["primaryConnectionString"]["value"]
+    websocket = True if config_data["websockets"]["value"].lower() in ("true", "false") else False
+    config_data['azure_north'] = AzureNorthPlugin(conn_str=conn_str, websocket=websocket)
     return config_data
 
 
@@ -78,7 +80,7 @@ async def plugin_send(data, payload, stream_id):
     except asyncio.CancelledError:
         pass
     except Exception as ex:
-        _LOGGER.exception("Data could not be sent, {}".format(str(ex)))
+        _LOGGER.exception(ex, "Failed to send data.")
     else:
         return is_data_sent, new_last_object_id, num_sent
 
@@ -94,9 +96,10 @@ def plugin_reconfigure():
 class AzureNorthPlugin(object):
     """North Azure Plugin"""
 
-    def __init__(self, _config):
+    def __init__(self, conn_str, websocket):
         self.event_loop = asyncio.get_event_loop()
-        self.config = _config
+        self.primary_connection_string = conn_str
+        self.mqtt_over_websocket = websocket
 
     async def send_payloads(self, payloads):
         is_data_sent = False
@@ -120,28 +123,33 @@ class AzureNorthPlugin(object):
             num_sent = await self._send_payloads(payload_block)
             is_data_sent = True
         except Exception as ex:
-            _LOGGER.exception("Data could not be sent, {}".format(str(ex)))
+            _LOGGER.exception(ex, 'Failed on sending payload.')
         return is_data_sent, last_object_id, num_sent
 
     async def _send_payloads(self, payload_block):
         """send a list of block payloads"""
         num_count = 0
+        exception_raised = False
         try:
             device_client = IoTHubDeviceClient.create_from_connection_string(
-                self.config["primaryConnectionString"]["value"], websockets=self.config["websockets"]["value"])
+                self.primary_connection_string, websockets=self.mqtt_over_websocket)
             # Connect the device client.
             await device_client.connect()
-            message = Message(json.dumps(payload_block, separators=(',', ':')).encode('utf-8'))
-            message.content_encoding = "utf-8"
-            message.content_type = "application/json"
-            _LOGGER.debug("Sending message: {} and its size: {}".format(message, str(message.get_size())))
+            # separators used only to get minimum payload size to remove whitespaces around ',' ':'
+            payload = json.dumps(payload_block, separators=(',', ':')).encode('utf-8')
+            message = Message(data=payload, content_encoding="utf-8", content_type="application/json")
+            _LOGGER.debug("Sending message: {} and of size: {}".format(message, str(message.get_size())))
             await device_client.send_message(message)
         except Exception as ex:
-            _LOGGER.exception('Exception sending payloads: {}'.format(ex))
+            exception_raised = True
+            _LOGGER.exception(ex, 'Failed on sending a list of block payloads.')
         else:
             num_count += len(payload_block)
         finally:
-            # graceful exit
-            await device_client.shutdown()
+            # prevent to not execute when exception before client connection
+            if not exception_raised:
+                # graceful exit
+                if device_client.connected:
+                    await device_client.shutdown()
         return num_count
 

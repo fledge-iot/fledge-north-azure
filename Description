@@ -1,1 +1,1 @@
-A Python plugin for Fledge that sends data north to the Azure IoT Hub.
+A Python based Azure IoT Hub device client plugin for Fledge that sends data north to the Azure IoT Hub.
