@@ -97,7 +97,7 @@ class AzureNorthPlugin(object):
     def __init__(self, config):
         self.event_loop = asyncio.get_event_loop()
         self.primary_connection_string = config["primaryConnectionString"]["value"]
-        self.mqtt_over_websocket = True if config["websockets"]["value"].lower() in ("true", "false") else False
+        self.mqtt_over_websocket = True if config["websockets"]["value"].lower() == 'true' else False
 
     async def send_payloads(self, payloads):
         is_data_sent = False
