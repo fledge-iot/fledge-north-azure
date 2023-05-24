@@ -68,17 +68,25 @@ def plugin_info():
 def plugin_init(data):
     config_data = deepcopy(data)
     config_data['azure_iot_hub_device_client'] = AzureIoTHubDeviceClient(config_data)
+    config_data['max_retry_count'] = 10
     return config_data
 
 
 async def plugin_send(handle, payload, stream_id):
     try:
         azure_client = handle['azure_iot_hub_device_client']
-        is_data_sent, new_last_object_id, num_sent = await azure_client.send(payload)
+        is_data_sent = False
+        new_last_object_id = 0
+        num_sent = 0
+        if azure_client.client is None and handle['max_retry_count'] <= 10:
+            handle['max_retry_count'] += 1
+            await azure_client.connect()
+        if azure_client.client is not None:
+            is_data_sent, new_last_object_id, num_sent = await azure_client.send(payload)
     except asyncio.CancelledError:
         pass
-    except Exception as ex:
-        _LOGGER.exception(ex, "Failed to send data.")
+    except ValueError as err:
+        _LOGGER.error(err, "Bad Primary connection string to communicate with Azure IoT Hub.")
     else:
         return is_data_sent, new_last_object_id, num_sent
 
@@ -121,8 +129,6 @@ class AzureIoTHubDeviceClient(object):
                     break
                 last_object_id = p["id"]
                 payload_block.append(read)
-            if self.client is None:
-                await self.connect()
             num_sent = await self.send_message(payload_block)
             is_data_sent = True
         except Exception as ex:
