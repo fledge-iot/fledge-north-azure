@@ -56,6 +56,12 @@ _DEFAULT_CONFIG = {
 
 
 def plugin_info():
+    """Used only once when call will be made to a plugin
+    Args:
+
+    Returns:
+        Information about the plugin including the configuration for the plugin
+    """
     return {
         'name': 'Azure IoT Hub device client',
         'version': '2.1.0',
@@ -66,6 +72,12 @@ def plugin_info():
 
 
 def plugin_init(data):
+    """Used for initialization of a plugin
+    Args:
+        data: Plugin configuration
+    Returns:
+        Dictionary of a Plugin configuration
+    """
     config_data = deepcopy(data)
     config_data['azure_iot_hub_device_client'] = AzureIoTHubDeviceClient(config_data)
     config_data['max_retry_count'] = 10
@@ -73,6 +85,17 @@ def plugin_init(data):
 
 
 async def plugin_send(handle, payload, stream_id):
+    """Used to send the readings block to the configured destination
+    Args:
+        handle: An object which is returned by plugin_init
+        payload: A list of readings block
+        stream_id: An integer that uniquely identifies the connection from Fledge instance to the destination system
+    Returns:
+          Tuple which consists of
+          - A Boolean that indicates if any data has been sent
+          - The object id of the last reading which has been sent
+          - Total number of readings which has been sent to the configured destination
+    """
     try:
         azure_client = handle['azure_iot_hub_device_client']
         is_data_sent = False
@@ -92,6 +115,12 @@ async def plugin_send(handle, payload, stream_id):
 
 
 def plugin_shutdown(handle):
+    """Used when plugin is no longer required and will be final call to the plugin
+    Args:
+        handle: An object which is returned by plugin_init
+    Returns:
+        None
+    """
     azure_client = handle['azure_iot_hub_device_client']
     azure_client.shutdown()
     handle['azure_iot_hub_device_client'] = None
@@ -102,15 +131,39 @@ def plugin_reconfigure():
 
 
 class AzureIoTHubDeviceClient(object):
-    """Azure IoTHubDeviceClient"""
+    """A custom AzureIoTHubDeviceClient class"""
 
     def __init__(self, config):
+        """"Initializer for AzureIoTHubDeviceClient
+        Args:
+            config: configuration data of plugin
+        """
         self.event_loop = asyncio.get_event_loop()
         self.primary_connection_string = config["primaryConnectionString"]["value"]
         self.mqtt_over_websocket = True if config["websockets"]["value"].lower() == 'true' else False
         self.client = None
 
     async def send(self, payloads):
+        """Sends a message to the default events endpoint on the Azure IoT Hub instance.
+        Args:
+            payloads: A list of readings block
+        Returns:
+            Tuple which consists of
+            - A Boolean that indicates if any data has been sent
+            - The object id of the last reading which has been sent
+            - Total number of readings which has been sent to the configured destination
+        """
+        async def _send_message(pb):
+            num_count = 0
+            if self.client.connected:
+                # separators used only to get minimum payload size to remove whitespaces around ',' ':'
+                payload = json.dumps(pb, separators=(',', ':')).encode('utf-8')
+                message = Message(data=payload, content_encoding="utf-8", content_type="application/json")
+                _LOGGER.debug("Sending message: {} and of size: {}".format(message, str(message.get_size())))
+                await self.client.send_message(message)
+                num_count += len(pb)
+            return num_count
+
         is_data_sent = False
         last_object_id = 0
         num_sent = 0
@@ -129,29 +182,20 @@ class AzureIoTHubDeviceClient(object):
                     break
                 last_object_id = p["id"]
                 payload_block.append(read)
-            num_sent = await self.send_message(payload_block)
+            num_sent = await _send_message(payload_block)
             is_data_sent = True
         except Exception as ex:
             _LOGGER.exception(ex, 'Failed on sending payload.')
         return is_data_sent, last_object_id, num_sent
 
     async def connect(self):
+        """Connects the client to an Azure IoT Hub instance."""
         self.client = IoTHubDeviceClient.create_from_connection_string(
             self.primary_connection_string, websockets=self.mqtt_over_websocket)
         # Connect the device client.
         await self.client.connect()
 
     async def shutdown(self):
+        """Disconnect the client from the Azure IoT Hub instance. Shut down the client for graceful exit."""
         if self.client.connected:
             await self.client.shutdown()
-
-    async def send_message(self, payload_block):
-        num_count = 0
-        if self.client.connected:
-            # separators used only to get minimum payload size to remove whitespaces around ',' ':'
-            payload = json.dumps(payload_block, separators=(',', ':')).encode('utf-8')
-            message = Message(data=payload, content_encoding="utf-8", content_type="application/json")
-            _LOGGER.debug("Sending message: {} and of size: {}".format(message, str(message.get_size())))
-            await self.client.send_message(message)
-            num_count += len(payload_block)
-        return num_count
