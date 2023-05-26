@@ -35,9 +35,10 @@ def test_plugin_info():
 
 
 def test_plugin_init():
-    with patch.object(azure_iot, 'AzureNorthPlugin'):
+    with patch.object(azure_iot, 'AzureIoTHubDeviceClient'):
         actual = azure_iot.plugin_init(config)
-        del actual['azure_north']
+        del actual['azure_iot_hub_device_client']
+        del actual['max_retry_count']
         assert actual == config
 
 
@@ -51,4 +52,9 @@ def test_plugin_reconfigure():
 
 
 def test_plugin_shutdown():
-    assert azure_iot.plugin_shutdown(azure_iot._DEFAULT_CONFIG) is None
+    handle = azure_iot._DEFAULT_CONFIG
+    handle['azure_iot_hub_device_client'] = azure_iot.AzureIoTHubDeviceClient
+    with patch.object(azure_iot.AzureIoTHubDeviceClient, 'shutdown') as patch_shutdown:
+        assert azure_iot.plugin_shutdown(handle) is None
+        assert handle['azure_iot_hub_device_client'] is None
+    patch_shutdown.assert_called_once_with()
