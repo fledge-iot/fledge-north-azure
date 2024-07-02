@@ -64,7 +64,7 @@ def plugin_info():
     """
     return {
         'name': 'Azure IoT Hub device client',
-        'version': '2.4.0',
+        'version': '2.5.0',
         'type': 'north',
         'interface': '1.0',
         'config': _DEFAULT_CONFIG
