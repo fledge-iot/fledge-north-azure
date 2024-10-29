@@ -27,7 +27,7 @@ def test_plugin_contract():
 def test_plugin_info():
     assert azure_iot.plugin_info() == {
         'name': 'Azure IoT Hub device client',
-        'version': '2.5.0',
+        'version': '2.6.0',
         'type': 'north',
         'interface': '1.0',
         'config': config
